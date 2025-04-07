@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id              String    @id @default(uuid())
+  name            String
+  email           String    @unique
+  password        String
+  resetToken      String?
+  resetTokenExpiry DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  profile         UserProfile?
+  sleepData       SleepData[]
+  relaxationHistory RelaxationHistory[]
+  geminiInteractions GeminiInteraction[]
+  preferences       UserPreferences?
+}
+
+model UserProfile {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sleepGoalHours  Float     @default(8)
+  bedtimeGoal     String    @default("22:00") // Format: "HH:MM" in 24-hour format
+  wakeupGoal      String    @default("06:00") // Format: "HH:MM" in 24-hour format
+  darkMode        Boolean   @default(false)
+  twoFactorEnabled Boolean  @default(false)
+  emailNotifications Boolean @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model SleepData {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            DateTime  @default(now())
+  bedtime         DateTime
+  wakeupTime      DateTime
+  sleepDuration   Float     // in hours
+  deepSleepPercentage Float
+  remSleepPercentage Float
+  lightSleepPercentage Float
+  awakePercentage Float
+  sleepScore      Int       // 0-100
+  sleepEfficiency Float     // percentage
+  factors         SleepFactors?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model SleepFactors {
+  id              String    @id @default(uuid())
+  sleepDataId     String    @unique
+  sleepData       SleepData @relation(fields: [sleepDataId], references: [id], onDelete: Cascade)
+  temperature     Float?    // in degrees Celsius
+  noiseLevel      String?   // "Low", "Medium", "High"
+  screenTime      Int?      // minutes before bed
+  physicalActivity Int?     // steps or activity level
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model RelaxationHistory {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String    // "Meditation", "Sound", "Breathing"
+  name            String
+  duration        Int       // in minutes
+  completedAt     DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model GeminiInteraction {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt          String
+  response        String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model UserPreferences {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferredTopics String    // Store as JSON string
+  language        String    @default("en")
+  timezone        String    @default("UTC")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
