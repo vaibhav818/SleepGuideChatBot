@@ -1,12 +1,15 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-let genAI = null;
-if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '' && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here') {
-  try {
-    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  } catch (err) {
-    console.warn('[Gemini Init Warning]:', err.message);
+function getGenAIClient() {
+  const key = process.env.GEMINI_API_KEY;
+  if (key && key.trim() !== '' && key !== 'your_gemini_api_key_here') {
+    try {
+      return new GoogleGenerativeAI(key.trim());
+    } catch (err) {
+      console.warn('[Gemini Init Warning]:', err.message);
+    }
   }
+  return null;
 }
 
 /**
@@ -176,6 +179,7 @@ async function generateSleepAdvice({ user, sleepLogs = [], message, conversation
   });
 
   // Try real Gemini API if key is present
+  const genAI = getGenAIClient();
   if (genAI) {
     try {
       const model = genAI.getGenerativeModel({
