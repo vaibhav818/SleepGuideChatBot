@@ -150,6 +150,30 @@ When an interviewer says: **"Walk me through your architecture and key engineeri
 
 ---
 
+### Q11: Why did you choose direct JWT authentication over Email OTP / Magic Links, and how would you implement OTP/2FA in production?
+**Answer**:
+*"For this platform, I deliberately prioritized direct JWT authentication with bcrypt salting over email OTPs for critical engineering and user experience reasons:
+1. **Friction-Free Onboarding & Zero External Dependency**: Third-party SMTP providers (Nodemailer, SendGrid, Mailgun) introduce external network latency (often 30–60 seconds for delivery) and frequently fail due to spam filters, IP blacklisting, or quota exhaustion, which breaks the flow of user onboarding and live technical evaluations.
+2. **Stateless Scalability**: With JWT, the backend cryptographically signs the token with HMAC-SHA256 containing the user ID and expiration. Authorization middleware verifies the signature locally without requiring constant database lookups.
+
+**Production OTP / 2FA Implementation Architecture**:
+If extending the system for enterprise-grade 2FA or passwordless email login:
+1. **Generation & Ephemeral Storage**: Generate a cryptographically secure 6-digit numeric code using `crypto.randomInt(100000, 999999)` and store its hash in **Redis** with a strict 5-minute Time-To-Live (`EX 300`) keyed by `otp:${email}`.
+2. **Asynchronous Delivery**: Dispatch via an asynchronous job queue (e.g. BullMQ / AWS SES) to keep the Express event loop non-blocking.
+3. **Replay Attack Prevention**: Upon successful match, immediately delete the Redis key (`DEL`) so the OTP cannot be reused.
+4. **Brute-Force & Lockout Guard**: Limit verification attempts to 3 per code using Redis `INCR`, locking the account temporarily if exceeded, combined with IP rate limiting via `express-rate-limit`."*
+
+---
+
+### Q12: How do you prevent brute-force attacks against authentication endpoints?
+**Answer**:
+*"We employ a defense-in-depth security strategy:
+1. **Rate Limiting**: Configured `express-rate-limit` to restrict requests to 300 requests per 15 minutes globally, and a dedicated 30 requests/minute limiter on LLM chat and auth endpoints.
+2. **Constant-Time Comparison**: We use `bcrypt.compare()` for password evaluation, which operates in constant time to prevent timing-attack vulnerabilities.
+3. **Sanitized Error Responses**: During failed logins, the API deliberately returns generic error messages (`'Invalid email or password'`) rather than specifying whether the email or password was incorrect, preventing username/email enumeration attacks."*
+
+---
+
 ## 5. 💻 Quick Commands for Live Interview Demos
 
 | Command | Purpose |
