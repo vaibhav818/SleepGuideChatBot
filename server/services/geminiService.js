@@ -181,54 +181,51 @@ async function generateSleepAdvice({ user, sleepLogs = [], message, conversation
   // Try real Gemini API if key is present
   const genAI = getGenAIClient();
   if (genAI) {
-    const candidateModels = [
-      process.env.GEMINI_MODEL || 'gemini-1.5-flash',
-      'gemini-flash-latest',
-      'gemini-1.5-pro',
-      'gemini-pro',
-    ];
+    const modelName = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction: systemInstructions,
+      });
 
-    for (const modelName of candidateModels) {
-      try {
-        const model = genAI.getGenerativeModel({
-          model: modelName,
-          systemInstruction: systemInstructions,
-        });
-
-        // Format previous chat history into Gemini contents format
-        const formattedHistory = (conversationHistory || []).slice(-6).map((msg) => ({
+      // Keep recent context lean (last 2-3 messages) for high performance
+      const contents = [
+        ...(conversationHistory || []).slice(-3).map((msg) => ({
           role: msg.sender === 'user' ? 'user' : 'model',
           parts: [{ text: msg.text }],
-        }));
+        })),
+        { role: 'user', parts: [{ text: userPrompt }] },
+      ];
 
-        const chat = model.startChat({
-          history: formattedHistory,
-        });
+      // 4.5-second timeout guard to ensure user never experiences a hanging response
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Gemini API call timed out')), 4500)
+      );
 
-        const result = await chat.sendMessage(userPrompt);
-        const text = result.response.text();
+      const apiPromise = model.generateContent({ contents });
+      const result = await Promise.race([apiPromise, timeoutPromise]);
+      const text = result.response.text();
 
-        // Extract bullet tips if present
-        const lines = text.split('\n');
-        const tips = lines
-          .filter((l) => l.trim().startsWith('-') || l.trim().startsWith('*') || l.trim().match(/^\d+\./))
-          .map((l) => l.replace(/^[-*]|\d+\.\s*/, '').trim())
-          .filter((l) => l.length > 10 && l.length < 160)
-          .slice(0, 3);
+      // Extract bullet tips if present
+      const lines = text.split('\n');
+      const tips = lines
+        .filter((l) => l.trim().startsWith('-') || l.trim().startsWith('*') || l.trim().match(/^\d+\./))
+        .map((l) => l.replace(/^[-*]|\d+\.\s*/, '').trim())
+        .filter((l) => l.length > 10 && l.length < 160)
+        .slice(0, 3);
 
-        return {
-          text,
-          actionableTips: tips.length > 0 ? tips : [
-            'Stick to a consistent wake time daily',
-            'Aim for 10 minutes of morning sunlight',
-            'Avoid heavy meals and caffeine within 6 hours of bedtime'
-          ],
-          source: `Gemini API (${modelName})`,
-        };
-      } catch (apiError) {
-        console.warn(`[Gemini API with ${modelName} encountered an issue]:`, apiError.message);
-        // Continue loop to try next model alias before resorting to local fallback
-      }
+      return {
+        text,
+        actionableTips: tips.length > 0 ? tips : [
+          'Stick to a consistent wake time daily',
+          'Aim for 10 minutes of morning sunlight',
+          'Avoid heavy meals and caffeine within 6 hours of bedtime',
+        ],
+        source: `Gemini API (${modelName})`,
+      };
+    } catch (apiError) {
+      console.warn(`[Gemini API Speed Guard - ${apiError.message}] Serving instant clinical fallback.`);
+      // Fall through to instant local fallback
     }
   }
 
