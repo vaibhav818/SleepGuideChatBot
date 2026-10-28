@@ -10,11 +10,15 @@ async function runTests() {
   let token = null;
 
   try {
-    // 1. Health check
-    console.log('Test 1: GET /api/health');
+    // 1. Health check & Root SPA check
+    console.log('Test 1: GET /api/health and GET /');
     const healthRes = await fetch(`${baseUrl}/api/health`);
     const healthData = await healthRes.json();
     console.log('✓ Health status:', healthData.status, '| DB:', healthData.database?.database);
+
+    const rootRes = await fetch(`${baseUrl}/`);
+    const rootText = await rootRes.text();
+    console.log('✓ Root GET / status:', rootRes.status, '| Content includes root div:', rootText.includes('id="root"'));
 
     // 2. 1-Click Demo Login
     console.log('\nTest 2: POST /api/auth/demo');
@@ -113,3 +117,4 @@ async function runTests() {
 }
 
 runTests();
+

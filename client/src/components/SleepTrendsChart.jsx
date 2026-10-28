@@ -93,3 +93,4 @@ export default function SleepTrendsChart({ trends = [], targetHours = 8 }) {
     </div>
   );
 }
+

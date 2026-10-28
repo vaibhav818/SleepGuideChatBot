@@ -19,3 +19,4 @@ router.get('/stats', getSleepStats);
 router.delete('/:id', deleteSleepLog);
 
 module.exports = router;
+

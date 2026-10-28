@@ -158,3 +158,4 @@ When an interviewer says: **"Walk me through your architecture and key engineeri
 | `npm run dev:client` | Start React frontend on `http://localhost:5173` |
 | `node server/test-api.js` | Run the automated 7-step integration test suite |
 | `npm run build:client` | Verify production frontend build & bundle optimization |
+

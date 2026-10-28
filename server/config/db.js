@@ -28,3 +28,4 @@ const getDBStatus = () => ({
 });
 
 module.exports = { connectDB, getDBStatus };
+

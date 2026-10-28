@@ -15,3 +15,4 @@ router.get('/trends', protect, getWeeklyTrends);
 router.get('/audit', protect, getSleepAudit);
 
 module.exports = router;
+

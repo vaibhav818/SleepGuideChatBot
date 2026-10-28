@@ -97,3 +97,4 @@ export const analyticsAPI = {
       body: JSON.stringify(data),
     }),
 };
+

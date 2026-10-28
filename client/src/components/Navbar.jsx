@@ -165,3 +165,4 @@ export default function Navbar({ activeTab, setActiveTab, onOpenLogModal }) {
     </header>
   );
 }
+

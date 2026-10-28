@@ -6,6 +6,7 @@ const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const fs = require('fs');
 
 // Load environment variables
 dotenv.config();
@@ -25,8 +26,13 @@ const app = express();
 // Connect to Database
 connectDB();
 
-// 1. Security Headers (Helmet)
-app.use(helmet());
+// 1. Security Headers (Helmet with relaxed CSP for SPA assets)
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
 
 // 2. HTTP Request Compression (Improves backend response payload speeds by ~35%)
 app.use(compression());
@@ -103,7 +109,30 @@ app.use('/api/sleep', sleepRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
-// 10. Centralized Error Handler Middleware
+// 10. Serve Frontend Single Page Application (SPA)
+const clientDistPath = path.join(__dirname, '../client/dist');
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+  // Catch-all route to serve React index.html for client-side routing
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api')) {
+      return res.sendFile(path.join(clientDistPath, 'index.html'));
+    }
+    next();
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.send(`
+      <div style="font-family: system-ui, sans-serif; text-align: center; padding: 50px; background: #080a18; color: #fff; min-height: 100vh;">
+        <h1 style="color: #6366f1;">🌙 SomnaAI Backend API is Running</h1>
+        <p style="color: #94a3b8;">Frontend development server is available at <a href="http://localhost:5173" style="color: #38bdf8;">http://localhost:5173</a></p>
+        <p style="color: #94a3b8;">API Health endpoint: <a href="/api/health" style="color: #10b981;">/api/health</a></p>
+      </div>
+    `);
+  });
+}
+
+// 11. Centralized Error Handler Middleware
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;

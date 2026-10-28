@@ -240,3 +240,4 @@ exports.calculateSleepCycles = (req, res) => {
     message: 'Please provide either targetWakeTime or targetBedTime',
   });
 };
+

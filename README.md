@@ -151,3 +151,4 @@ Open [http://localhost:5173](http://localhost:5173) in your browser. Click **"1-
 ## 👨‍💻 Author & Interview Defense
 - **Author**: Vaibhav ([@vaibhav818](https://github.com/vaibhav818))
 - Comprehensive interview defense guide with 15+ technical questions and answers is available in [`INTERVIEW_PREP.md`](./INTERVIEW_PREP.md).
+

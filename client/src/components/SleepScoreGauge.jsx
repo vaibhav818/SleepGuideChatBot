@@ -78,3 +78,4 @@ export default function SleepScoreGauge({ score = 85, label = 'Sleep Score' }) {
     </div>
   );
 }
+
