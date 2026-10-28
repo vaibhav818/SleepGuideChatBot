@@ -181,45 +181,54 @@ async function generateSleepAdvice({ user, sleepLogs = [], message, conversation
   // Try real Gemini API if key is present
   const genAI = getGenAIClient();
   if (genAI) {
-    try {
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        systemInstruction: systemInstructions,
-      });
+    const candidateModels = [
+      process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+      'gemini-flash-latest',
+      'gemini-1.5-pro',
+      'gemini-pro',
+    ];
 
-      // Format previous chat history into Gemini contents format
-      const formattedHistory = (conversationHistory || []).slice(-6).map((msg) => ({
-        role: msg.sender === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.text }],
-      }));
+    for (const modelName of candidateModels) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          systemInstruction: systemInstructions,
+        });
 
-      const chat = model.startChat({
-        history: formattedHistory,
-      });
+        // Format previous chat history into Gemini contents format
+        const formattedHistory = (conversationHistory || []).slice(-6).map((msg) => ({
+          role: msg.sender === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.text }],
+        }));
 
-      const result = await chat.sendMessage(userPrompt);
-      const text = result.response.text();
+        const chat = model.startChat({
+          history: formattedHistory,
+        });
 
-      // Extract bullet tips if present
-      const lines = text.split('\n');
-      const tips = lines
-        .filter((l) => l.trim().startsWith('-') || l.trim().startsWith('*') || l.trim().match(/^\d+\./))
-        .map((l) => l.replace(/^[-*]|\d+\.\s*/, '').trim())
-        .filter((l) => l.length > 10 && l.length < 160)
-        .slice(0, 3);
+        const result = await chat.sendMessage(userPrompt);
+        const text = result.response.text();
 
-      return {
-        text,
-        actionableTips: tips.length > 0 ? tips : [
-          'Stick to a consistent wake time daily',
-          'Aim for 10 minutes of morning sunlight',
-          'Avoid heavy meals and caffeine within 6 hours of bedtime'
-        ],
-        source: 'Gemini 1.5 Flash API',
-      };
-    } catch (apiError) {
-      console.warn('[Gemini API Call Failed - Switching to Contextual Fallback]:', apiError.message);
-      // Fall through to contextual fallback
+        // Extract bullet tips if present
+        const lines = text.split('\n');
+        const tips = lines
+          .filter((l) => l.trim().startsWith('-') || l.trim().startsWith('*') || l.trim().match(/^\d+\./))
+          .map((l) => l.replace(/^[-*]|\d+\.\s*/, '').trim())
+          .filter((l) => l.length > 10 && l.length < 160)
+          .slice(0, 3);
+
+        return {
+          text,
+          actionableTips: tips.length > 0 ? tips : [
+            'Stick to a consistent wake time daily',
+            'Aim for 10 minutes of morning sunlight',
+            'Avoid heavy meals and caffeine within 6 hours of bedtime'
+          ],
+          source: `Gemini API (${modelName})`,
+        };
+      } catch (apiError) {
+        console.warn(`[Gemini API with ${modelName} encountered an issue]:`, apiError.message);
+        // Continue loop to try next model alias before resorting to local fallback
+      }
     }
   }
 
