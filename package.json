@@ -1,0 +1,22 @@
+{
+  "name": "ai-sleep-guidance-platform",
+  "version": "1.0.0",
+  "description": "AI-Based Sleep Guidance Platform built with React.js, Node.js, Express.js, Tailwind CSS, MongoDB, and Gemini API",
+  "scripts": {
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "build:client": "npm run build --prefix client",
+    "start": "node server/server.js"
+  },
+  "keywords": [
+    "sleep-tracker",
+    "gemini-api",
+    "chatbot",
+    "react",
+    "express",
+    "mongodb",
+    "sleep-science"
+  ],
+  "author": "Vaibhav",
+  "license": "ISC"
+}
