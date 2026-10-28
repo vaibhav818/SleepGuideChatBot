@@ -182,6 +182,7 @@ async function generateSleepAdvice({ user, sleepLogs = [], message, conversation
   const genAI = getGenAIClient();
   if (genAI) {
     const modelName = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+    let timer = null;
     try {
       const model = genAI.getGenerativeModel({
         model: modelName,
@@ -197,12 +198,14 @@ async function generateSleepAdvice({ user, sleepLogs = [], message, conversation
         { role: 'user', parts: [{ text: userPrompt }] },
       ];
 
-      // 4.5-second timeout guard to ensure user never experiences a hanging response
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Gemini API call timed out')), 4500)
-      );
+      const timeoutPromise = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error('Gemini API call timed out after 3.5s')), 3500);
+      });
 
       const apiPromise = model.generateContent({ contents });
+      // Prevent unhandled rejection if timeout triggers first
+      apiPromise.catch(() => {});
+
       const result = await Promise.race([apiPromise, timeoutPromise]);
       const text = result.response.text();
 
@@ -226,6 +229,8 @@ async function generateSleepAdvice({ user, sleepLogs = [], message, conversation
     } catch (apiError) {
       console.warn(`[Gemini API Speed Guard - ${apiError.message}] Serving instant clinical fallback.`);
       // Fall through to instant local fallback
+    } finally {
+      if (timer) clearTimeout(timer);
     }
   }
 
