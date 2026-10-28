@@ -84,6 +84,11 @@ export default function AuthView() {
             <Sparkles className="w-4 h-4" />
             1-Click Demo Login
           </button>
+          
+          <div className="mt-2.5 pt-2 border-t border-emerald-900/40 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Demo Email: <strong className="text-emerald-300">demo@sleepguide.ai</strong></span>
+            <span>Password: <strong className="text-emerald-300">sleep123</strong></span>
+          </div>
         </div>
 
         {/* Divider */}

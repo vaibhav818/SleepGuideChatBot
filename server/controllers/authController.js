@@ -96,6 +96,11 @@ exports.login = async (req, res, next) => {
 
     let user;
     if (dbStatus.connected) {
+      // Special handler for demo credentials to guarantee seamless login
+      if (email === 'demo@sleepguide.ai' && password === 'sleep123') {
+        return exports.demoLogin(req, res, next);
+      }
+
       user = await User.findOne({ email }).select('+password');
       if (!user) {
         return res.status(401).json({
@@ -116,6 +121,9 @@ exports.login = async (req, res, next) => {
     } else {
       // In-memory fallback
       await mockStore.init();
+      if (email === 'demo@sleepguide.ai' && password === 'sleep123') {
+        return sendTokenResponse(mockStore.users[0], 200, res);
+      }
       user = mockStore.users.find((u) => u.email === email);
       if (!user) {
         return res.status(401).json({
@@ -155,7 +163,7 @@ exports.demoLogin = async (req, res, next) => {
         user = await User.create({
           name: demoData.name,
           email: demoData.email,
-          password: 'sleep123_demo_hashed',
+          password: 'sleep123',
           sleepProfile: demoData.sleepProfile,
         });
 
