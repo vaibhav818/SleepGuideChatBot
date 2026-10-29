@@ -109,7 +109,7 @@ JWT_EXPIRE=30d
 GEMINI_API_KEY=your_gemini_api_key_here
 CLIENT_URL=http://localhost:5173
 ```
-*(Note: If `GEMINI_API_KEY` is omitted, the app automatically runs in Smart Contextual Fallback mode so all features work immediately during interviews!)*
+*(Note: If `GEMINI_API_KEY` is omitted, the app automatically runs in Smart Contextual Fallback mode so all features work immediately during testing!)*
 
 ### 3. Run the Backend
 ```bash
@@ -148,7 +148,8 @@ Open [http://localhost:5173](http://localhost:5173) in your browser. Click **"1-
 
 ---
 
-## 👨‍💻 Author & Interview Defense
+## 👨‍💻 Author
 - **Author**: Vaibhav ([@vaibhav818](https://github.com/vaibhav818))
-- Comprehensive interview defense guide with 15+ technical questions and answers is available in [`INTERVIEW_PREP.md`](./INTERVIEW_PREP.md).
+- **License**: MIT
+
 
