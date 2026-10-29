@@ -145,9 +145,12 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`======================================================\n`);
 });
 
-// Handle unhandled promise rejections
+// Handle unhandled exceptions & promise rejections
+process.on('uncaughtException', (err) => {
+  console.error('[Uncaught Exception Caught]:', err.stack || err.message);
+});
 process.on('unhandledRejection', (err) => {
-  console.error('[Unhandled Rejection Error]:', err.message);
+  console.error('[Unhandled Rejection Caught]:', err.stack || err.message);
 });
 
 module.exports = app;

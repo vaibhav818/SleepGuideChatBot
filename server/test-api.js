@@ -79,6 +79,9 @@ async function runTests() {
       }),
     });
     const chatData = await chatRes.json();
+    if (!chatRes.ok) {
+      console.log('Chat Error Status:', chatRes.status, chatData);
+    }
     console.log('✓ Chat AI Response Received:');
     console.log('  Source:', chatData.source);
     console.log('  ConversationId:', chatData.conversationId);
