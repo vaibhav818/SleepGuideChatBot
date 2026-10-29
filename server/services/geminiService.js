@@ -181,7 +181,7 @@ async function generateSleepAdvice({ user, sleepLogs = [], message, conversation
   // Try real Gemini API if key is present
   const genAI = getGenAIClient();
   if (genAI) {
-    const modelName = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+    const modelName = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest';
     let timer = null;
     try {
       const model = genAI.getGenerativeModel({
@@ -198,8 +198,9 @@ async function generateSleepAdvice({ user, sleepLogs = [], message, conversation
         { role: 'user', parts: [{ text: userPrompt }] },
       ];
 
+      // 18-second timeout guard to allow full generative completion
       const timeoutPromise = new Promise((_, reject) => {
-        timer = setTimeout(() => reject(new Error('Gemini API call timed out after 3.5s')), 3500);
+        timer = setTimeout(() => reject(new Error('Gemini API call timed out after 18s')), 18000);
       });
 
       const apiPromise = model.generateContent({ contents });
