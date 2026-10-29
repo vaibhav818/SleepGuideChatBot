@@ -7,7 +7,7 @@ const connectDB = async () => {
   
   try {
     const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 2500, // Quick timeout to detect if MongoDB is available
+      serverSelectionTimeoutMS: 8000, // 8s timeout to accommodate Atlas DNS SRV resolution & TLS handshake
     });
     isConnected = true;
     console.log(`[MongoDB] Connected successfully to host: ${conn.connection.host}`);
@@ -21,11 +21,14 @@ const connectDB = async () => {
   }
 };
 
-const getDBStatus = () => ({
-  connected: isConnected,
-  database: isConnected ? mongoose.connection.name : 'In-Memory Fallback',
-  host: isConnected ? mongoose.connection.host : 'local-memory',
-});
+const getDBStatus = () => {
+  const isReady = mongoose.connection.readyState === 1;
+  return {
+    connected: isReady,
+    database: isReady ? mongoose.connection.name : 'In-Memory Fallback',
+    host: isReady ? mongoose.connection.host : 'local-memory',
+  };
+};
 
 module.exports = { connectDB, getDBStatus };
 
