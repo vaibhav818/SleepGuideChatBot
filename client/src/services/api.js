@@ -25,12 +25,29 @@ async function request(endpoint, options = {}) {
 
   try {
     const res = await fetch(url, config);
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.message || `HTTP error! Status: ${res.status}`);
+    let data = null;
+    try {
+      data = await res.json();
+    } catch (parseErr) {
+      // Body was not JSON (e.g. proxy error or empty response)
     }
+
+    if (!res.ok) {
+      if (!data) {
+        throw new Error('Cannot reach backend server. Please verify the backend is running on port 5000 (cd server; npm run dev).');
+      }
+      throw new Error(data.message || `Request failed with status: ${res.status}`);
+    }
+
+    if (!data) {
+      throw new Error('No response data received from server.');
+    }
+
     return data;
   } catch (err) {
+    if (err.message.includes('Unexpected end of JSON') || err.message.includes('Failed to fetch')) {
+      throw new Error('Backend server is not reachable. Make sure "npm run dev" is running in your server folder (port 5000).');
+    }
     console.error(`API Error on [${options.method || 'GET'} ${endpoint}]:`, err.message);
     throw err;
   }
