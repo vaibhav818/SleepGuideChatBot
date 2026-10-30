@@ -150,6 +150,6 @@ Open [http://localhost:5173](http://localhost:5173) in your browser. Click **"1-
 
 ## 👨‍💻 Author
 - **Author**: Vaibhav ([@vaibhav818](https://github.com/vaibhav818))
-- **License**: MIT
+
 
 
