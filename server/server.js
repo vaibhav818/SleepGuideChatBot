@@ -44,27 +44,15 @@ app.use(
 // 2. HTTP Request Compression (Improves backend response payload speeds by ~35%)
 app.use(compression());
 
-// 3. CORS Configuration
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  process.env.CLIENT_URL,
-].filter(Boolean);
-
+// 3. CORS Configuration (Allows Vercel domains, localhost, and custom URLs)
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // allow requests with no origin, matched origin, or Vercel preview domains
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
-        return callback(null, true);
-      }
-      return callback(null, true); // Dev-friendly fallback
-    },
+    origin: true,
     credentials: true,
   })
 );
 
-// 4. Request Logging (Morgan - disabled in serverless / production)
+// 4. Request Logging (Morgan - in development)
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   app.use(morgan('dev'));
 }
@@ -79,26 +67,28 @@ const apiLimiter = rateLimit({
   max: 300, // Limit each IP to 300 requests per 15 minutes
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again after 15 minutes.',
   },
 });
-app.use('/api/', apiLimiter);
+app.use(['/api/', '/'], apiLimiter);
 
 // 7. Dedicated Rate Limiter for AI Chatbot (Prevents Gemini API quota exhaustion)
 const chatLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 30, // 30 prompts per minute
+  validate: { trustProxy: false },
   message: {
     success: false,
     message: 'Chat prompt frequency exceeded. Please pause a moment before asking another question.',
   },
 });
-app.use('/api/chat/', chatLimiter);
+app.use(['/api/chat/', '/chat/'], chatLimiter);
 
 // 8. Health check & System Status route
-app.get(['/api/health', '/health'], (req, res) => {
+app.get(['/api/health', '/health', '/api'], (req, res) => {
   const dbStatus = getDBStatus();
   res.status(200).json({
     status: 'healthy',
@@ -145,7 +135,7 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 let server = null;
-if (!process.env.VERCEL) {
+if (process.env.NODE_ENV !== 'test') {
   server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n======================================================`);
     console.log(`🌙 SomnaAI Sleep Guidance API running on PORT: ${PORT}`);
