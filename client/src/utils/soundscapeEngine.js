@@ -15,7 +15,7 @@ export function createSoundscape(ctx, type, masterGain) {
   };
 
   // Helper to generate smooth pink/brown noise buffer
-  const createSmoothNoiseBuffer = (seconds = 4) => {
+  const createSmoothNoiseBuffer = (seconds = 5) => {
     const bufferSize = ctx.sampleRate * seconds;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
@@ -33,6 +33,62 @@ export function createSoundscape(ctx, type, masterGain) {
       data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.2) * 0.12;
       b6 = white * 0.115926;
     }
+    return buffer;
+  };
+
+  // Helper to generate authentic organic stereo rain with stochastic droplet impacts
+  const createOrganicRainBuffer = (seconds = 6) => {
+    const bufferSize = ctx.sampleRate * seconds;
+    const buffer = ctx.createBuffer(2, bufferSize, ctx.sampleRate);
+    const left = buffer.getChannelData(0);
+    const right = buffer.getChannelData(1);
+
+    // 1. Soft diffuse rainfall bed (dual-channel pink noise)
+    let b0L=0,b1L=0,b2L=0,b3L=0,b4L=0,b5L=0,b6L=0;
+    let b0R=0,b1R=0,b2R=0,b3R=0,b4R=0,b5R=0,b6R=0;
+
+    for (let i = 0; i < bufferSize; i++) {
+      const whiteL = Math.random() * 2 - 1;
+      const whiteR = Math.random() * 2 - 1;
+
+      b0L = 0.99886 * b0L + whiteL * 0.0555179;
+      b1L = 0.99332 * b1L + whiteL * 0.0750759;
+      b2L = 0.96900 * b2L + whiteL * 0.1538520;
+      b3L = 0.86650 * b3L + whiteL * 0.3104856;
+      b4L = 0.55000 * b4L + whiteL * 0.5329522;
+      b5L = -0.7616 * b5L - whiteL * 0.0168980;
+      left[i] = (b0L + b1L + b2L + b3L + b4L + b5L + b6L + whiteL * 0.12) * 0.045;
+      b6L = whiteL * 0.115926;
+
+      b0R = 0.99886 * b0R + whiteR * 0.0555179;
+      b1R = 0.99332 * b1R + whiteR * 0.0750759;
+      b2R = 0.96900 * b2R + whiteR * 0.1538520;
+      b3R = 0.86650 * b3R + whiteR * 0.3104856;
+      b4R = 0.55000 * b4R + whiteR * 0.5329522;
+      b5R = -0.7616 * b5R - whiteR * 0.0168980;
+      right[i] = (b0R + b1R + b2R + b3R + b4R + b5R + b6R + whiteR * 0.12) * 0.045;
+      b6R = whiteR * 0.115926;
+    }
+
+    // 2. Thousands of randomized micro-droplet impacts (sounds like gentle rain on a window/leaf)
+    for (let i = 0; i < bufferSize - 1200; i++) {
+      if (Math.random() < 0.0055) {
+        const dropDuration = Math.floor(ctx.sampleRate * (0.003 + Math.random() * 0.006));
+        const dropFreq = 700 + Math.random() * 1200;
+        const amp = (0.12 + Math.random() * 0.45) * 0.22;
+        const pan = Math.random(); // stereo position
+        const decay = 550 + Math.random() * 300;
+
+        for (let j = 0; j < dropDuration && i + j < bufferSize; j++) {
+          const t = j / ctx.sampleRate;
+          const env = Math.exp(-t * decay);
+          const val = Math.sin(2 * Math.PI * dropFreq * t) * env * amp;
+          left[i + j] += val * (1 - pan);
+          right[i + j] += val * pan;
+        }
+      }
+    }
+
     return buffer;
   };
 
@@ -98,72 +154,53 @@ export function createSoundscape(ctx, type, masterGain) {
 
   } else if (type === 'rain') {
     // ==========================================
-    // 2. NIGHT RAIN + CALMING CELESTIAL CHIMES
+    // 2. AUTHENTIC COZY GENTLE RAIN (Pure Nature Acoustic)
     // ==========================================
 
-    // A. Soft, Gentle Rain Acoustic (No radio static)
-    const noise = track(ctx.createBufferSource());
-    noise.buffer = createSmoothNoiseBuffer(4);
-    noise.loop = true;
+    const rainSource = track(ctx.createBufferSource());
+    rainSource.buffer = createOrganicRainBuffer(6);
+    rainSource.loop = true;
 
-    // Multi-band shaping for natural water patter
-    const filter = track(ctx.createBiquadFilter());
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(520, ctx.currentTime);
-    filter.Q.setValueAtTime(0.85, ctx.currentTime);
+    // Highpass removes muddy sub-rumble below 120Hz
+    const rainHp = track(ctx.createBiquadFilter());
+    rainHp.type = 'highpass';
+    rainHp.frequency.setValueAtTime(130, ctx.currentTime);
 
+    // Lowpass cuts all harsh high-frequency sizzle above 1800Hz
     const rainLp = track(ctx.createBiquadFilter());
     rainLp.type = 'lowpass';
-    rainLp.frequency.setValueAtTime(780, ctx.currentTime);
+    rainLp.frequency.setValueAtTime(1700, ctx.currentTime);
+    rainLp.Q.setValueAtTime(0.5, ctx.currentTime);
 
-    // Rain wind modulation LFO
+    // Gentle breeze variation LFO (~0.1Hz) to emulate natural outdoor wind/rainfall swells
     const rainLfo = track(ctx.createOscillator());
-    rainLfo.frequency.setValueAtTime(0.18, ctx.currentTime);
+    rainLfo.frequency.setValueAtTime(0.09, ctx.currentTime);
     const rainLfoGain = track(ctx.createGain());
-    rainLfoGain.gain.setValueAtTime(0.15, ctx.currentTime);
+    rainLfoGain.gain.setValueAtTime(0.12, ctx.currentTime);
 
     const rainGain = track(ctx.createGain());
-    rainGain.gain.setValueAtTime(0.95, ctx.currentTime);
+    rainGain.gain.setValueAtTime(1.1, ctx.currentTime);
 
     rainLfo.connect(rainLfoGain);
     rainLfoGain.connect(rainGain.gain);
 
-    noise.connect(filter);
-    filter.connect(rainLp);
+    rainSource.connect(rainHp);
+    rainHp.connect(rainLp);
     rainLp.connect(rainGain);
     rainGain.connect(masterGain);
 
     rainLfo.start();
-    noise.start();
+    rainSource.start();
 
-    // B. Algorithmic Celestial Night Chimes (Plays tranquil tones every ~2.5s)
-    const pentatonicScale = [288, 324, 384, 432, 486, 576]; // Solfeggio harmonic frequencies
-    const playChime = () => {
-      try {
-        if (ctx.state !== 'running') return;
-        const freq = pentatonicScale[Math.floor(Math.random() * pentatonicScale.length)];
-        const chimeOsc = track(ctx.createOscillator());
-        chimeOsc.type = 'sine';
-        chimeOsc.frequency.setValueAtTime(freq, ctx.currentTime);
-
-        const chimeGain = track(ctx.createGain());
-        const now = ctx.currentTime;
-        chimeGain.gain.setValueAtTime(0.0001, now);
-        chimeGain.gain.linearRampToValueAtTime(0.065, now + 0.08);
-        chimeGain.gain.exponentialRampToValueAtTime(0.0001, now + 2.2);
-
-        chimeOsc.connect(chimeGain);
-        chimeGain.connect(masterGain);
-
-        chimeOsc.start(now);
-        chimeOsc.stop(now + 2.3);
-      } catch (err) {}
-    };
-
-    // Play first chime shortly after start, then repeat peacefully
-    const timeoutId = setTimeout(playChime, 800);
-    const intervalId = setInterval(playChime, 2800);
-    intervals.push(timeoutId, intervalId);
+    // Subtle indoor cozy roof resonance (gentle 60Hz hum, creates warm bedroom feel)
+    const roofDrone = track(ctx.createOscillator());
+    roofDrone.type = 'sine';
+    roofDrone.frequency.setValueAtTime(65, ctx.currentTime);
+    const roofDroneGain = track(ctx.createGain());
+    roofDroneGain.gain.setValueAtTime(0.035, ctx.currentTime);
+    roofDrone.connect(roofDroneGain);
+    roofDroneGain.connect(masterGain);
+    roofDrone.start();
 
   } else {
     // ==========================================
