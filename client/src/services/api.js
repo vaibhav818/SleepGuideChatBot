@@ -92,11 +92,16 @@ export const sleepAPI = {
 };
 
 export const chatAPI = {
-  sendMessage: (message, conversationId) =>
-    request('/chat/message', {
+  sendMessage: (message, conversationId) => {
+    const payload = { message };
+    if (conversationId) {
+      payload.conversationId = conversationId;
+    }
+    return request('/chat/message', {
       method: 'POST',
-      body: JSON.stringify({ message, conversationId }),
-    }),
+      body: JSON.stringify(payload),
+    });
+  },
   getConversations: () => request('/chat/conversations'),
   getConversation: (id) => request(`/chat/conversations/${id}`),
   deleteConversation: (id) =>

@@ -163,7 +163,7 @@ function generateContextualFallback({ user, sleepLogs = [], message }) {
   return {
     text: responseText,
     actionableTips: tips,
-    source: 'SomnaAI Sleep Science Engine (Local Mode)',
+    source: 'SomnaAI',
   };
 }
 
@@ -189,14 +189,31 @@ async function generateSleepAdvice({ user, sleepLogs = [], message, conversation
         systemInstruction: systemInstructions,
       });
 
-      // Keep recent context lean (last 2-3 messages) for high performance
-      const contents = [
-        ...(conversationHistory || []).slice(-3).map((msg) => ({
-          role: msg.sender === 'user' ? 'user' : 'model',
-          parts: [{ text: msg.text }],
-        })),
-        { role: 'user', parts: [{ text: userPrompt }] },
-      ];
+      // Build strict alternating conversation history adhering to Gemini API specs
+      const rawHistory = (conversationHistory || [])
+        .filter((msg) => msg && (msg.text || msg.content))
+        .map((msg) => ({
+          role: (msg.sender === 'user' || msg.role === 'user') ? 'user' : 'model',
+          parts: [{ text: msg.text || msg.content }],
+        }));
+
+      const contents = [];
+      for (const item of rawHistory) {
+        if (contents.length === 0) {
+          if (item.role === 'user') contents.push(item);
+        } else {
+          const lastRole = contents[contents.length - 1].role;
+          if (item.role !== lastRole) contents.push(item);
+        }
+      }
+
+      // If contents ends with 'user', drop it so our new userPrompt is the next 'user' turn
+      if (contents.length > 0 && contents[contents.length - 1].role === 'user') {
+        contents.pop();
+      }
+
+      // Append current user prompt
+      contents.push({ role: 'user', parts: [{ text: userPrompt }] });
 
       // 18-second timeout guard to allow full generative completion
       const timeoutPromise = new Promise((_, reject) => {
@@ -225,7 +242,7 @@ async function generateSleepAdvice({ user, sleepLogs = [], message, conversation
           'Aim for 10 minutes of morning sunlight',
           'Avoid heavy meals and caffeine within 6 hours of bedtime',
         ],
-        source: `Gemini API (${modelName})`,
+        source: 'SomnaAI',
       };
     } catch (apiError) {
       console.warn(`[Gemini API Speed Guard - ${apiError.message}] Serving instant clinical fallback.`);

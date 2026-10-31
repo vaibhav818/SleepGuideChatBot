@@ -1,31 +1,29 @@
 import React from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 export default function SleepScoreGauge({ score = 85, label = 'Sleep Score' }) {
+  const { theme } = useTheme();
   const safeScore = Math.min(100, Math.max(0, score || 0));
   const radius = 64;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (safeScore / 100) * circumference;
 
-  let colorGradient = 'from-emerald-400 to-teal-500';
-  let strokeColor = '#10b981';
+  let strokeColor = theme.accentPrimary || '#2DD4BF';
   let statusText = 'Optimal Sleep';
   let statusBadge = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
 
   if (safeScore < 60) {
-    colorGradient = 'from-rose-400 to-red-500';
     strokeColor = '#f43f5e';
     statusText = 'Sleep Deficit';
     statusBadge = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
   } else if (safeScore < 75) {
-    colorGradient = 'from-amber-400 to-orange-500';
     strokeColor = '#f59e0b';
     statusText = 'Fair Quality';
     statusBadge = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
   } else if (safeScore < 88) {
-    colorGradient = 'from-indigo-400 to-cyan-400';
-    strokeColor = '#6366f1';
+    strokeColor = theme.accentPrimary || '#38bdf8';
     statusText = 'Good Recovery';
-    statusBadge = 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
+    statusBadge = 'border';
   }
 
   return (
@@ -37,7 +35,7 @@ export default function SleepScoreGauge({ score = 85, label = 'Sleep Score' }) {
             cx="80"
             cy="80"
             r={radius}
-            stroke="#1b2046"
+            stroke="rgba(255, 255, 255, 0.08)"
             strokeWidth="12"
             fill="transparent"
           />
@@ -70,7 +68,18 @@ export default function SleepScoreGauge({ score = 85, label = 'Sleep Score' }) {
       </div>
 
       <div className="mt-2 flex flex-col items-center gap-1">
-        <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${statusBadge}`}>
+        <span
+          className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${statusBadge}`}
+          style={
+            safeScore >= 75
+              ? {
+                  backgroundColor: theme.accentMuted,
+                  color: theme.accentPrimary,
+                  borderColor: theme.border,
+                }
+              : {}
+          }
+        >
           {statusText}
         </span>
         <span className="text-xs text-slate-400 font-medium">{label}</span>
@@ -78,4 +87,3 @@ export default function SleepScoreGauge({ score = 85, label = 'Sleep Score' }) {
     </div>
   );
 }
-

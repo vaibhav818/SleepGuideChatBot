@@ -101,7 +101,9 @@ exports.sendMessage = async (req, res, next) => {
       return res.status(200).json({
         success: true,
         conversationId: conversation._id,
-        message: assistantMessageObj,
+        message: assistantMessageObj.text,
+        response: assistantMessageObj.text,
+        messageObj: assistantMessageObj,
         source: aiResponse.source,
       });
     } else {
@@ -112,7 +114,9 @@ exports.sendMessage = async (req, res, next) => {
       return res.status(200).json({
         success: true,
         conversationId: conversation._id,
-        message: assistantMessageObj,
+        message: assistantMessageObj.text,
+        response: assistantMessageObj.text,
+        messageObj: assistantMessageObj,
         source: aiResponse.source,
       });
     }
@@ -178,29 +182,43 @@ exports.getConversationById = async (req, res, next) => {
     const { id } = req.params;
     const dbStatus = getDBStatus();
 
+    let conversation;
     if (dbStatus.connected) {
-      const conversation = await ChatConversation.findOne({
+      conversation = await ChatConversation.findOne({
         _id: id,
         userId: req.user._id,
-      });
-
-      if (!conversation) {
-        return res.status(404).json({ success: false, message: 'Conversation not found' });
-      }
-
-      return res.status(200).json({ success: true, data: conversation });
+      }).lean();
     } else {
       await mockStore.init();
-      const conversation = mockStore.conversations.find(
+      conversation = mockStore.conversations.find(
         (c) => c._id.toString() === id && c.userId.toString() === req.user._id.toString()
       );
-
-      if (!conversation) {
-        return res.status(404).json({ success: false, message: 'Conversation not found' });
-      }
-
-      return res.status(200).json({ success: true, data: conversation });
     }
+
+    if (!conversation) {
+      return res.status(404).json({ success: false, message: 'Conversation not found' });
+    }
+
+    // Format messages so both sender/text and role/content are guaranteed
+    const formattedMessages = (conversation.messages || []).map((m) => {
+      const isUser = m.sender === 'user' || m.role === 'user';
+      const textVal = m.text || m.content || '';
+      return {
+        ...m,
+        sender: isUser ? 'user' : 'assistant',
+        role: isUser ? 'user' : 'assistant',
+        text: textVal,
+        content: textVal,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        ...conversation,
+        messages: formattedMessages,
+      },
+    });
   } catch (error) {
     next(error);
   }

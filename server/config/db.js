@@ -3,6 +3,12 @@ const mongoose = require('mongoose');
 let isConnected = false;
 
 const connectDB = async () => {
+  // Reuse existing connection if already open (essential for Vercel serverless)
+  if (mongoose.connection.readyState >= 1) {
+    isConnected = true;
+    return true;
+  }
+
   const uri = process.env.MONGO_URI || 'mongodb://localhost:27017/sleepguide';
   
   try {

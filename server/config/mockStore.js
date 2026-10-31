@@ -13,6 +13,26 @@ const mockStore = {
     // Seed a standard demo user
     const salt = await bcrypt.genSalt(10);
     const demoHashedPassword = await bcrypt.hash('sleep123', salt);
+    const vaibhavHashedPassword = await bcrypt.hash('Vaibhav01', salt);
+
+    const vaibhavUser = {
+      _id: '675d00000000000000000002',
+      name: 'Vaibhav Kumar',
+      email: 'vaibhav2016singh@gmail.com',
+      password: vaibhavHashedPassword,
+      sleepProfile: {
+        targetHours: 8,
+        chronotype: 'Intermediate',
+        bedtimePreference: '23:00',
+        wakePreference: '07:00',
+        caffeineCutoffHour: 14,
+        stressLevel: 'Low',
+        primaryGoal: 'Deep sleep optimization & morning energy',
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.push(vaibhavUser);
     
     const demoUser = {
       _id: '675d00000000000000000001',
@@ -67,6 +87,27 @@ const mockStore = {
         createdAt: d,
         updatedAt: d,
       });
+
+      this.sleepLogs.push({
+        _id: `675d0000000000000000002${idx}`,
+        userId: vaibhavUser._id,
+        date: d,
+        bedtime: s.bedtime,
+        wakeTime: s.wakeTime,
+        durationMinutes: s.duration,
+        sleepLatencyMinutes: s.lat,
+        qualityRating: s.qual,
+        awakeningsCount: s.awk,
+        deepSleepEstimatePercent: 20 + (s.qual * 1.5),
+        morningMood: s.mood,
+        caffeineCups: s.caffeine,
+        screenTimeBeforeBedMin: s.lat > 25 ? 45 : 15,
+        exerciseMinutes: s.score > 80 ? 45 : 0,
+        notes: s.score > 80 ? 'Restorative night with great morning energy.' : 'Slight restlessness.',
+        sleepScore: s.score,
+        createdAt: d,
+        updatedAt: d,
+      });
     });
 
     // Seed a welcome conversation
@@ -98,14 +139,40 @@ const mockStore = {
           ]
         }
       ],
-      contextUsed: {
-        avgScore: 79,
-        avgDurationHours: 7.4,
-        logsCount: 7,
-        chronotype: 'Intermediate',
-      },
       createdAt: new Date(Date.now() - 3600000 * 24),
       updatedAt: new Date(Date.now() - 3600000 * 23.9),
+    });
+
+    this.conversations.push({
+      _id: '675d00000000000000000098',
+      userId: vaibhavUser._id,
+      title: 'Circadian Pacing & SWS Restoration',
+      messages: [
+        {
+          _id: 'v1',
+          sender: 'user',
+          text: 'How can I optimize deep slow-wave sleep for maximum morning alertness?',
+          timestamp: new Date(Date.now() - 3600000 * 12),
+        },
+        {
+          _id: 'v2',
+          sender: 'assistant',
+          text: `Hello Vaibhav! Your sleep logs show strong baseline restorative architecture (average 92 sleep score). To further maximize slow-wave deep sleep (SWS):
+
+### Science-Backed Protocols:
+1. **Thermal Regulation**: Deep sleep occurs most readily when core body temperature drops ~1°C. Keep your bedroom ambient temperature between 18°C - 19.5°C (65°F - 67°F).
+2. **Pre-Sleep Hot Bath/Shower**: Taking a warm shower 60-90 minutes before bed causes peripheral vasodilation (blood vessels expand in hands and feet), accelerating the core body temperature drop required for delta brainwave emergence.
+3. **Consistent Wake Anchor**: Maintain your 7:00 AM wake time every day to keep your SCN circadian clock tightly synchronized.`,
+          timestamp: new Date(Date.now() - 3600000 * 11.9),
+          actionableTips: [
+            'Keep bedroom temperature at 66°F (19°C)',
+            'Take a warm shower 75 minutes prior to bedtime',
+            'Get 10 minutes of direct morning sunlight by 7:30 AM'
+          ]
+        }
+      ],
+      createdAt: new Date(Date.now() - 3600000 * 12),
+      updatedAt: new Date(Date.now() - 3600000 * 11.9),
     });
 
     this.initialized = true;

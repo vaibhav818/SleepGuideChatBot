@@ -4,9 +4,10 @@ const { body, validationResult } = require('express-validator');
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    const errorMessages = errors.array().map((err) => err.msg).filter(Boolean);
     return res.status(400).json({
       success: false,
-      message: 'Validation failed',
+      message: errorMessages.length > 0 ? errorMessages.join(', ') : 'Validation failed',
       errors: errors.array().map((err) => ({
         field: err.path || err.param,
         message: err.msg,
@@ -79,7 +80,10 @@ const chatMessageValidation = [
     .withMessage('Message text cannot be empty')
     .isLength({ max: 2000 })
     .withMessage('Message cannot exceed 2000 characters'),
-  body('conversationId').optional().isString(),
+  body('conversationId')
+    .optional({ nullable: true, checkFalsy: true })
+    .isString()
+    .withMessage('conversationId must be a valid string'),
   handleValidationErrors,
 ];
 

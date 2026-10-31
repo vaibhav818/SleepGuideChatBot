@@ -105,7 +105,7 @@ exports.login = async (req, res, next) => {
       if (!user) {
         return res.status(401).json({
           success: false,
-          message: 'Invalid email or password',
+          message: 'ID or password does not exist',
         });
       }
 
@@ -113,7 +113,7 @@ exports.login = async (req, res, next) => {
       if (!isMatch) {
         return res.status(401).json({
           success: false,
-          message: 'Invalid email or password',
+          message: 'ID or password does not exist',
         });
       }
 
@@ -128,7 +128,7 @@ exports.login = async (req, res, next) => {
       if (!user) {
         return res.status(401).json({
           success: false,
-          message: 'Invalid email or password',
+          message: 'ID or password does not exist',
         });
       }
 
@@ -136,7 +136,7 @@ exports.login = async (req, res, next) => {
       if (!isMatch) {
         return res.status(401).json({
           success: false,
-          message: 'Invalid email or password',
+          message: 'ID or password does not exist',
         });
       }
 

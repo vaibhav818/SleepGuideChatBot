@@ -8,8 +8,12 @@ const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from server folder and workspace root
+const envPath = fs.existsSync(path.join(__dirname, '.env')) 
+  ? path.join(__dirname, '.env') 
+  : path.join(__dirname, '../.env');
+dotenv.config({ path: envPath });
+dotenv.config(); // Fallback to current working directory
 
 const { connectDB, getDBStatus } = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
@@ -22,6 +26,9 @@ const analyticsRoutes = require('./routes/analyticsRoutes');
 
 // Initialize express app
 const app = express();
+
+// Trust reverse proxies (essential for Vercel, Heroku, AWS Lambda)
+app.set('trust proxy', 1);
 
 // Connect to Database
 connectDB();
@@ -47,8 +54,8 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // allow requests with no origin (e.g. mobile apps, curl) or matched origin
-      if (!origin || allowedOrigins.includes(origin)) {
+      // allow requests with no origin, matched origin, or Vercel preview domains
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
         return callback(null, true);
       }
       return callback(null, true); // Dev-friendly fallback
@@ -57,8 +64,8 @@ app.use(
   })
 );
 
-// 4. Request Logging (Morgan)
-if (process.env.NODE_ENV !== 'production') {
+// 4. Request Logging (Morgan - disabled in serverless / production)
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   app.use(morgan('dev'));
 }
 
@@ -91,7 +98,7 @@ const chatLimiter = rateLimit({
 app.use('/api/chat/', chatLimiter);
 
 // 8. Health check & System Status route
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   const dbStatus = getDBStatus();
   res.status(200).json({
     status: 'healthy',
@@ -103,11 +110,11 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// 9. API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/sleep', sleepRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/analytics', analyticsRoutes);
+// 9. API Routes (mounted with and without /api for universal Vercel & local support)
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/sleep', '/sleep'], sleepRoutes);
+app.use(['/api/chat', '/chat'], chatRoutes);
+app.use(['/api/analytics', '/analytics'], analyticsRoutes);
 
 // 10. Serve Frontend Single Page Application (SPA)
 const clientDistPath = path.join(__dirname, '../client/dist');
@@ -137,13 +144,16 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n======================================================`);
-  console.log(`🌙 SomnaAI Sleep Guidance API running on PORT: ${PORT}`);
-  console.log(`🚀 Mode: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🤖 Gemini AI: ${process.env.GEMINI_API_KEY ? 'API Key Detected' : 'Smart Contextual Fallback Active'}`);
-  console.log(`======================================================\n`);
-});
+let server = null;
+if (!process.env.VERCEL) {
+  server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`\n======================================================`);
+    console.log(`🌙 SomnaAI Sleep Guidance API running on PORT: ${PORT}`);
+    console.log(`🚀 Mode: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🤖 Gemini AI: ${process.env.GEMINI_API_KEY ? 'API Key Detected' : 'Smart Contextual Fallback Active'}`);
+    console.log(`======================================================\n`);
+  });
+}
 
 // Handle unhandled exceptions & promise rejections
 process.on('uncaughtException', (err) => {

@@ -1,12 +1,30 @@
 {
-  "name": "ai-sleep-guidance-platform",
+  "name": "somna-ai",
   "version": "1.0.0",
-  "description": "AI-Based Sleep Guidance Platform built with React.js, Node.js, Express.js, Tailwind CSS, MongoDB, and Gemini API",
+  "description": "SomnaAI - Circadian Rhythm & Sleep Guidance Platform powered by Google Gemini",
+  "main": "api/index.js",
   "scripts": {
+    "build": "cd client && npm run build",
+    "vercel-build": "cd client && npm install && npm run build",
+    "dev": "node dev.js",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
     "build:client": "npm run build --prefix client",
     "start": "node server/server.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "bcryptjs": "^3.0.3",
+    "compression": "^1.8.2",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "express-validator": "^7.3.2",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.11.4",
+    "morgan": "^1.12.1"
   },
   "keywords": [
     "sleep-tracker",
@@ -20,4 +38,3 @@
   "author": "Vaibhav",
   "license": "ISC"
 }
-

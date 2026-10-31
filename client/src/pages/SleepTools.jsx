@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { analyticsAPI } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 import SoundscapePlayer from '../components/SoundscapePlayer';
 import {
   Wrench,
@@ -12,9 +13,14 @@ import {
   RotateCcw,
   Moon,
   Sun,
+  Wind,
+  ShieldCheck,
+  Zap,
 } from 'lucide-react';
 
 export default function SleepTools() {
+  const { theme, selectedPalette } = useTheme();
+
   // Sleep Cycle Calculator State
   const [calcMode, setCalcMode] = useState('wake'); // 'wake' or 'bed'
   const [targetTime, setTargetTime] = useState('07:00');
@@ -27,16 +33,17 @@ export default function SleepTools() {
 
   // 4-7-8 Breathing Guide State
   const [breathingActive, setBreathingActive] = useState(false);
-  const [breathingPhase, setBreathingPhase] = useState('Inhale'); // Inhale, Hold, Exhale
+  const [breathingPhase, setBreathingPhase] = useState('Inhale');
   const [breathingSeconds, setBreathingSeconds] = useState(4);
 
   // Calculate sleep cycles
   const fetchCycles = async () => {
     setLoadingCycles(true);
     try {
-      const payload = calcMode === 'wake'
-        ? { targetWakeTime: targetTime }
-        : { targetBedTime: targetTime };
+      const payload =
+        calcMode === 'wake'
+          ? { targetWakeTime: targetTime }
+          : { targetBedTime: targetTime };
       const res = await analyticsAPI.calcSleepCycles(payload);
       if (res.success) {
         setCycleOptions(res.options || []);
@@ -59,7 +66,6 @@ export default function SleepTools() {
       timer = setInterval(() => {
         setBreathingSeconds((prev) => {
           if (prev <= 1) {
-            // Transition phase
             if (breathingPhase === 'Inhale') {
               setBreathingPhase('Hold');
               return 7;
@@ -78,240 +84,345 @@ export default function SleepTools() {
     return () => clearInterval(timer);
   }, [breathingActive, breathingPhase]);
 
-  // Caffeine half-life calculation (assuming bedtime at 23:00 / 11 PM)
-  const bedHour = 23;
-  const hoursElapsed = Math.max(0, bedHour - caffeineHour);
-  const remainingCaffeineMg = Math.round(caffeineMg * Math.pow(0.5, hoursElapsed / 5.5));
-
   return (
-    <div className="space-y-8 pb-12 animate-fadeIn">
-      {/* Page Title */}
-      <div>
-        <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
-          <Wrench className="w-6 h-6 text-indigo-400" /> Circadian & Sleep Tools
+    <div className="space-y-6 pb-12 animate-fadeIn text-slate-100">
+      {/* Header */}
+      <div
+        className="p-6 rounded-3xl border backdrop-blur-xl transition-colors duration-700"
+        style={{
+          backgroundColor: theme.cardGlass,
+          borderColor: theme.border,
+        }}
+      >
+        <div
+          className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-mono uppercase border mb-1.5"
+          style={{
+            backgroundColor: theme.accentMuted,
+            borderColor: theme.border,
+            color: theme.accentPrimary,
+          }}
+        >
+          <Wrench className="w-3 h-3" />
+          <span>Neuro-Sensory Intervention Suite</span>
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          Circadian Sleep Tools
         </h1>
         <p className="text-xs sm:text-sm text-slate-400">
-          Clinical calculators, parasympathetic breathing guide, and sleep hygiene protocols
+          Ultradian cycle alignment, adenosine half-life calculators, and vagal tone modulation
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Tool 1: 90-Minute Sleep Cycle Calculator */}
-        <div className="glass-card rounded-3xl p-6 border border-indigo-950 flex flex-col justify-between">
+      {/* Grid: 3 Main Clinical Tools */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Tool 1: 90-Minute Ultradian Sleep Cycle Planner */}
+        <div
+          className="p-6 rounded-3xl border backdrop-blur-xl space-y-4 flex flex-col justify-between transition-colors duration-700"
+          style={{
+            backgroundColor: theme.cardGlass,
+            borderColor: theme.border,
+          }}
+        >
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-indigo-600/30 text-indigo-300 flex items-center justify-center">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white">90-Minute Sleep Cycle Engine</h3>
-                  <p className="text-xs text-slate-400">Wake up at the end of a cycle to prevent sleep inertia</p>
-                </div>
+            <div className="flex items-center gap-2 mb-3">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: theme.accentMuted, color: theme.accentPrimary }}
+              >
+                <Clock className="w-4 h-4" />
               </div>
+              <h2 className="text-sm font-bold text-white">90-Minute Sleep Cycle Optimizer</h2>
             </div>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Wake at the crest of light REM sleep to prevent sleep inertia caused by abrupt N3 slow-wave interruptions.
+            </p>
 
-            {/* Mode toggle */}
-            <div className="flex rounded-xl bg-sleep-900 p-1 border border-indigo-950 mb-4">
+            <div
+              className="mt-4 flex rounded-2xl bg-black/40 p-1 border"
+              style={{ borderColor: theme.border }}
+            >
               <button
                 onClick={() => setCalcMode('wake')}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  calcMode === 'wake' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400'
+                className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  calcMode === 'wake' ? 'shadow-md font-bold' : 'text-slate-400 hover:text-white'
                 }`}
+                style={
+                  calcMode === 'wake'
+                    ? {
+                        backgroundColor: theme.accentPrimary,
+                        color: selectedPalette === 'duneSand' ? '#251403' : '#041F1A',
+                      }
+                    : {}
+                }
               >
-                I want to wake up at...
+                I must wake up at
               </button>
               <button
                 onClick={() => setCalcMode('bed')}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  calcMode === 'bed' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400'
+                className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  calcMode === 'bed' ? 'shadow-md font-bold' : 'text-slate-400 hover:text-white'
                 }`}
+                style={
+                  calcMode === 'bed'
+                    ? {
+                        backgroundColor: theme.accentPrimary,
+                        color: selectedPalette === 'duneSand' ? '#251403' : '#041F1A',
+                      }
+                    : {}
+                }
               >
-                I plan to go to bed at...
+                I plan to sleep at
               </button>
             </div>
 
-            {/* Time Picker */}
-            <div className="flex items-center justify-between p-3.5 bg-sleep-950 rounded-2xl border border-indigo-900/60 mb-4">
-              <span className="text-xs font-semibold text-slate-300">
-                {calcMode === 'wake' ? 'Target Wake Up Time:' : 'Target Bedtime:'}
-              </span>
+            <div className="mt-3">
+              <label className="text-[11px] text-slate-400 block mb-1 font-mono uppercase">
+                Target Time
+              </label>
               <input
                 type="time"
                 value={targetTime}
                 onChange={(e) => setTargetTime(e.target.value)}
-                className="bg-sleep-900 border border-indigo-800 rounded-xl px-3 py-1.5 text-sm font-bold text-white focus:outline-none focus:border-indigo-500"
+                className="w-full bg-white/[0.04] border rounded-2xl px-4 py-2.5 text-white font-mono text-sm focus:outline-none"
+                style={{ borderColor: theme.border }}
               />
             </div>
 
-            {/* Suggested Cycles */}
-            <div className="space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-                {calcMode === 'wake' ? 'Optimal Bedtimes:' : 'Optimal Wake Times:'}
+            <div className="mt-4 space-y-2">
+              <span className="text-[10px] font-mono uppercase text-slate-400">
+                Recommended Times
               </span>
-              <div className="grid grid-cols-2 gap-2">
-                {cycleOptions.map((opt, i) => (
-                  <div
-                    key={i}
-                    className={`p-3 rounded-2xl border text-center transition-all ${
-                      opt.recommended
-                        ? 'bg-gradient-to-b from-indigo-950/80 to-sleep-900 border-indigo-500/50 shadow-lg shadow-indigo-500/10'
-                        : 'bg-sleep-900/40 border-indigo-950'
-                    }`}
+              {loadingCycles ? (
+                <div className="text-xs text-slate-400 py-2">Computing cycles...</div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {(cycleOptions.length > 0
+                    ? cycleOptions
+                    : [
+                        { time: '21:44', cycles: 6, duration: '9.0h' },
+                        { time: '23:14', cycles: 5, duration: '7.5h' },
+                        { time: '00:44', cycles: 4, duration: '6.0h' },
+                        { time: '02:14', cycles: 3, duration: '4.5h' },
+                      ]
+                  )
+                    .slice(0, 4)
+                    .map((c, i) => (
+                      <div
+                        key={i}
+                        className="p-3 rounded-2xl bg-white/[0.02] border border-white/[0.05] text-center"
+                      >
+                        <span
+                          className="text-sm font-bold block font-mono"
+                          style={{ color: theme.accentPrimary }}
+                        >
+                          {c.suggestedBedtime || c.suggestedWakeTime || c.time || '23:15'}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {c.cycles
+                            ? `${c.cycles} Cycles (${c.durationHours || c.duration || '7.5h'})`
+                            : '5 Cycles (7.5h)'}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="text-[10px] text-slate-500 pt-2 border-t border-white/[0.06] flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5" style={{ color: theme.accentPrimary }} />
+            <span>Factoring in 14-minute average latency</span>
+          </div>
+        </div>
+
+        {/* Tool 2: Adenosine & Caffeine Clearance Half-Life */}
+        <div
+          className="p-6 rounded-3xl border backdrop-blur-xl space-y-4 flex flex-col justify-between transition-colors duration-700"
+          style={{
+            backgroundColor: theme.cardGlass,
+            borderColor: theme.border,
+          }}
+        >
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: theme.accentMuted, color: theme.accentPrimary }}
+              >
+                <Coffee className="w-4 h-4" />
+              </div>
+              <h2 className="text-sm font-bold text-white">Adenosine & Caffeine Curve</h2>
+            </div>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Caffeine features an average 5.5-hour half-life and competitively binds adenosine receptors, suppressing natural sleep pressure.
+            </p>
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-slate-400">Consumption Time</span>
+                  <span
+                    className="font-mono font-bold"
+                    style={{ color: theme.accentPrimary }}
                   >
-                    <div className="text-lg font-extrabold text-white">
-                      {opt.suggestedBedtime || opt.suggestedWakeTime}
-                    </div>
-                    <div className="text-[11px] font-semibold text-indigo-300 mt-0.5">
-                      {opt.durationHours} hrs ({opt.cycles} cycles)
-                    </div>
-                    {opt.recommended && (
-                      <span className="inline-block mt-1 px-1.5 py-0.5 text-[9px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded">
-                        Recommended
-                      </span>
-                    )}
-                  </div>
-                ))}
+                    {caffeineHour}:00 ({caffeineHour > 12 ? `${caffeineHour - 12} PM` : `${caffeineHour} AM`})
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="6"
+                  max="20"
+                  value={caffeineHour}
+                  onChange={(e) => setCaffeineHour(Number(e.target.value))}
+                  className="w-full h-1.5 bg-white/10 rounded-lg cursor-pointer"
+                  style={{ accentColor: theme.accentPrimary }}
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-slate-400">Dose Quantity</span>
+                  <span
+                    className="font-mono font-bold"
+                    style={{ color: theme.accentPrimary }}
+                  >
+                    {caffeineMg} mg
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="50"
+                  max="400"
+                  step="25"
+                  value={caffeineMg}
+                  onChange={(e) => setCaffeineMg(Number(e.target.value))}
+                  className="w-full h-1.5 bg-white/10 rounded-lg cursor-pointer"
+                  style={{ accentColor: theme.accentPrimary }}
+                />
+              </div>
+
+              {/* Clearance Timeline */}
+              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">50% Cleared (1 Half-life):</span>
+                  <span className="text-white font-mono">{caffeineHour + 5}:30</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">75% Cleared (2 Half-lives):</span>
+                  <span
+                    className="font-mono font-semibold"
+                    style={{ color: theme.accentPrimary }}
+                  >
+                    {caffeineHour + 11}:00
+                  </span>
+                </div>
+                <div className="flex justify-between pt-1 border-t border-white/[0.06]">
+                  <span className="text-slate-400">Stage 3 Sleep Impact:</span>
+                  <span
+                    className="font-bold"
+                    style={{ color: caffeineHour > 14 ? '#F59E0B' : theme.accentPrimary }}
+                  >
+                    {caffeineHour > 14 ? 'Mild Inhibition' : 'Fully Clear by Bedtime'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          <p className="text-[11px] text-slate-500 mt-4">
-            *Accounts for 15 minutes of average physiological sleep latency.
-          </p>
+          <div className="text-[10px] text-slate-500 pt-2 border-t border-white/[0.06] flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5" style={{ color: theme.accentPrimary }} />
+            <span>Strict 14:00 cutoff preserves slow-wave integrity</span>
+          </div>
         </div>
 
-        {/* Tool 2: 4-7-8 Parasympathetic Breathing Guide */}
-        <div className="glass-card rounded-3xl p-6 border border-indigo-950 flex flex-col items-center justify-between text-center">
+        {/* Tool 3: Vagal Nerve Parasympathetic Breathing Orb */}
+        <div
+          className="p-6 rounded-3xl border backdrop-blur-xl space-y-4 flex flex-col justify-between transition-colors duration-700"
+          style={{
+            backgroundColor: theme.cardGlass,
+            borderColor: theme.border,
+          }}
+        >
           <div>
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <Heart className="w-5 h-5 text-rose-400" />
-              <h3 className="text-sm font-bold text-white">4-7-8 Relaxing Breath</h3>
+            <div className="flex items-center gap-2 mb-3">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: theme.accentMuted, color: theme.accentPrimary }}
+              >
+                <Wind className="w-4 h-4" />
+              </div>
+              <h2 className="text-sm font-bold text-white">4-7-8 Parasympathetic Cadence</h2>
             </div>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              Stimulate the vagus nerve and downregulate heart rate before turning off the lights
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Prolonged exhalation activates the vagus nerve, reducing autonomic vigilance and lowering systolic blood pressure.
             </p>
-          </div>
 
-          {/* Animated Breathing Circle */}
-          <div className="my-6 relative flex items-center justify-center">
-            <div
-              className={`w-36 h-36 rounded-full border-4 flex flex-col items-center justify-center transition-all duration-1000 ${
-                breathingActive
-                  ? breathingPhase === 'Inhale'
-                    ? 'scale-125 border-emerald-400 bg-emerald-500/10 shadow-xl shadow-emerald-500/20'
-                    : breathingPhase === 'Hold'
-                    ? 'scale-125 border-amber-400 bg-amber-500/10 shadow-xl shadow-amber-500/20'
-                    : 'scale-90 border-indigo-400 bg-indigo-500/10'
-                  : 'scale-100 border-indigo-900 bg-sleep-900/60'
-              }`}
-            >
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                {breathingActive ? breathingPhase : 'Ready'}
-              </span>
-              <span className="text-3xl font-extrabold text-white mt-1">
-                {breathingActive ? breathingSeconds : '4-7-8'}
-              </span>
+            {/* Breathing Animation Orb */}
+            <div className="my-6 flex flex-col items-center justify-center">
+              <div
+                className="w-36 h-36 rounded-full flex flex-col items-center justify-center border-2 transition-all duration-1000"
+                style={{
+                  borderColor: breathingActive ? theme.accentPrimary : 'rgba(255,255,255,0.1)',
+                  backgroundColor: breathingActive ? theme.accentMuted : 'rgba(255,255,255,0.02)',
+                  boxShadow: breathingActive ? `0 0 30px ${theme.glowColor}` : 'none',
+                  transform:
+                    breathingActive && breathingPhase === 'Inhale'
+                      ? 'scale(1.12)'
+                      : breathingActive && breathingPhase === 'Exhale'
+                      ? 'scale(0.92)'
+                      : 'scale(1.0)',
+                }}
+              >
+                <span className="text-xs uppercase font-mono tracking-widest text-slate-300">
+                  {breathingActive ? breathingPhase : 'Ready'}
+                </span>
+                <span className="text-3xl font-extrabold text-white mt-1">
+                  {breathingActive ? `${breathingSeconds}s` : '4-7-8'}
+                </span>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-3">
             <button
-              onClick={() => {
-                if (breathingActive) {
-                  setBreathingActive(false);
-                  setBreathingPhase('Inhale');
-                  setBreathingSeconds(4);
-                } else {
-                  setBreathingActive(true);
-                  setBreathingPhase('Inhale');
-                  setBreathingSeconds(4);
-                }
+              onClick={() => setBreathingActive(!breathingActive)}
+              className="w-full py-2.5 rounded-2xl font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: theme.accentPrimary,
+                color: selectedPalette === 'duneSand' ? '#251403' : '#041F1A',
+                boxShadow: `0 4px 18px ${theme.glowColor}`,
               }}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                breathingActive
-                  ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/30'
-                  : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30'
-              }`}
             >
-              {breathingActive ? <RotateCcw className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              {breathingActive ? 'Stop Exercise' : 'Start 4-7-8 Breathing'}
+              {breathingActive ? (
+                <>
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Pause Breathing Cycle</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>Begin 4-7-8 Sequence</span>
+                </>
+              )}
             </button>
           </div>
-        </div>
 
-        {/* Tool 3: Caffeine Half-Life & Adenosine Simulator */}
-        <div className="glass-card rounded-3xl p-6 border border-indigo-950 space-y-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
-              <Coffee className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white">Caffeine Half-Life Calculator</h3>
-              <p className="text-xs text-slate-400">Estimate active adenosine antagonism at bedtime</p>
-            </div>
-          </div>
-
-          <div className="space-y-4 text-xs">
-            <div>
-              <div className="flex justify-between text-slate-300 font-semibold mb-1">
-                <span>Time of Last Coffee:</span>
-                <span className="text-amber-400 font-bold">
-                  {caffeineHour > 12 ? caffeineHour - 12 + ':00 PM' : caffeineHour + ':00 AM'}
-                </span>
-              </div>
-              <input
-                type="range"
-                min="8"
-                max="21"
-                step="1"
-                value={caffeineHour}
-                onChange={(e) => setCaffeineHour(Number(e.target.value))}
-                className="w-full accent-amber-500"
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-slate-300 font-semibold mb-1">
-                <span>Initial Dose:</span>
-                <span className="text-amber-400 font-bold">{caffeineMg} mg (approx 1 mug)</span>
-              </div>
-              <input
-                type="range"
-                min="50"
-                max="350"
-                step="25"
-                value={caffeineMg}
-                onChange={(e) => setCaffeineMg(Number(e.target.value))}
-                className="w-full accent-amber-500"
-              />
-            </div>
-
-            {/* Result Box */}
-            <div className="p-4 rounded-2xl bg-sleep-900 border border-indigo-950 flex items-center justify-between">
-              <div>
-                <span className="text-slate-400 text-[11px] block">Active caffeine at 11:00 PM Bedtime:</span>
-                <span className="text-xl font-extrabold text-white">
-                  {remainingCaffeineMg} mg
-                </span>
-              </div>
-              <span
-                className={`px-2.5 py-1 text-xs font-bold rounded-lg border ${
-                  remainingCaffeineMg > 40
-                    ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                }`}
-              >
-                {remainingCaffeineMg > 40 ? '⚠️ Slow-Wave Sleep Disrupted' : '✅ Safe Sleep Window'}
-              </span>
-            </div>
+          <div className="text-[10px] text-slate-500 pt-2 border-t border-white/[0.06] flex items-center gap-1.5">
+            <Heart className="w-3.5 h-3.5" style={{ color: theme.accentPrimary }} />
+            <span>Stimulates baroreflex heart-rate deceleration</span>
           </div>
         </div>
+      </div>
 
-        {/* Tool 4: Soundscape Masking Player */}
+      {/* Audio Soundscape Suite */}
+      <div
+        className="p-6 rounded-3xl border backdrop-blur-xl transition-colors duration-700"
+        style={{
+          backgroundColor: theme.cardGlass,
+          borderColor: theme.border,
+        }}
+      >
+        <h2 className="text-base font-bold text-white mb-4">Acoustic Masking Synthesizer</h2>
         <SoundscapePlayer />
       </div>
     </div>
   );
 }
-

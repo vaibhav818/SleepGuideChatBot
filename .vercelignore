@@ -1,0 +1,11 @@
+.git
+.github
+.env
+.env.local
+node_modules
+client/node_modules
+server/node_modules
+INTERVIEW_PREP.md
+SomnaAI_Interview_Prep.*
+*.log
+
