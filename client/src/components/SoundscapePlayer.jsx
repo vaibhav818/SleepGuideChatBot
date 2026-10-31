@@ -1,78 +1,42 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Volume2, VolumeX, Play, Pause, Waves, CloudRain, Wind } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { createSoundscape } from '../utils/soundscapeEngine';
 
 export default function SoundscapePlayer() {
   const { theme, selectedPalette } = useTheme();
   const [isPlaying, setIsPlaying] = useState(false);
   const [soundType, setSoundType] = useState('brown');
-  const [volume, setVolume] = useState(30);
+  const [volume, setVolume] = useState(35);
 
   const audioCtxRef = useRef(null);
   const gainNodeRef = useRef(null);
-  const sourceNodeRef = useRef(null);
+  const soundscapeHandleRef = useRef(null);
 
   const startSound = (type = soundType) => {
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       if (!audioCtxRef.current) {
         audioCtxRef.current = new AudioContext();
+        gainNodeRef.current = audioCtxRef.current.createGain();
+        gainNodeRef.current.connect(audioCtxRef.current.destination);
       }
 
       if (audioCtxRef.current.state === 'suspended') {
         audioCtxRef.current.resume();
       }
 
-      const ctx = audioCtxRef.current;
-      const bufferSize = ctx.sampleRate * 2.5;
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-
-      if (type === 'brown') {
-        let lastOut = 0.0;
-        for (let i = 0; i < bufferSize; i++) {
-          const white = Math.random() * 2 - 1;
-          data[i] = (lastOut + 0.02 * white) / 1.02;
-          lastOut = data[i];
-          data[i] *= 3.5;
-        }
-      } else if (type === 'rain') {
-        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-        for (let i = 0; i < bufferSize; i++) {
-          const white = Math.random() * 2 - 1;
-          b0 = 0.99886 * b0 + white * 0.0555179;
-          b1 = 0.99332 * b1 + white * 0.0750759;
-          b2 = 0.96900 * b2 + white * 0.1538520;
-          b3 = 0.86650 * b3 + white * 0.3104856;
-          b4 = 0.55000 * b4 + white * 0.5329522;
-          b5 = -0.7616 * b5 - white * 0.0168980;
-          data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
-          b6 = white * 0.115926;
-        }
-      } else {
-        let lastOut = 0.0;
-        for (let i = 0; i < bufferSize; i++) {
-          const white = Math.random() * 2 - 1;
-          const waveMod = Math.sin((i / bufferSize) * Math.PI * 2) * 0.4 + 0.6;
-          data[i] = ((lastOut + 0.02 * white) / 1.02) * 3.5 * waveMod;
-          lastOut = data[i];
-        }
+      // Stop any existing soundscape
+      if (soundscapeHandleRef.current) {
+        soundscapeHandleRef.current.stop();
+        soundscapeHandleRef.current = null;
       }
 
-      const noiseSource = ctx.createBufferSource();
-      noiseSource.buffer = buffer;
-      noiseSource.loop = true;
+      const ctx = audioCtxRef.current;
+      gainNodeRef.current.gain.setValueAtTime(volume / 100, ctx.currentTime);
 
-      const gainNode = ctx.createGain();
-      gainNode.gain.setValueAtTime(volume / 100, ctx.currentTime);
-
-      noiseSource.connect(gainNode);
-      gainNode.connect(ctx.destination);
-
-      noiseSource.start();
-
-      sourceNodeRef.current = noiseSource;
-      gainNodeRef.current = gainNode;
+      // Launch high-fidelity acoustic + harmonic soundscape
+      soundscapeHandleRef.current = createSoundscape(ctx, type, gainNodeRef.current);
       setIsPlaying(true);
     } catch (e) {
       console.error('Web Audio error:', e);
@@ -80,15 +44,21 @@ export default function SoundscapePlayer() {
   };
 
   const stopSound = () => {
-    if (sourceNodeRef.current) {
-      try {
-        sourceNodeRef.current.stop();
-        sourceNodeRef.current.disconnect();
-      } catch (e) {}
-      sourceNodeRef.current = null;
+    if (soundscapeHandleRef.current) {
+      soundscapeHandleRef.current.stop();
+      soundscapeHandleRef.current = null;
     }
     setIsPlaying(false);
   };
+
+  useEffect(() => {
+    return () => {
+      stopSound();
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close().catch(() => {});
+      }
+    };
+  }, []);
 
   const togglePlay = () => {
     if (isPlaying) {

@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSleep } from '../context/SleepContext';
 import { useTheme } from '../context/ThemeContext';
 import { chatAPI, analyticsAPI } from '../services/api';
+import { createSoundscape } from '../utils/soundscapeEngine';
 import {
   Moon,
   Sparkles,
@@ -96,6 +97,7 @@ export default function SoothingDashboard({ onOpenLogModal, setActiveTab }) {
   const audioCtxRef = useRef(null);
   const gainNodeRef = useRef(null);
   const soundNodesRef = useRef([]);
+  const soundscapeHandleRef = useRef(null);
 
   // Telemetry Metrics synced with backend live stats
   const targetHours = user?.sleepProfile?.targetHours || 8;
@@ -243,6 +245,10 @@ export default function SoothingDashboard({ onOpenLogModal, setActiveTab }) {
   };
 
   const stopAudio = () => {
+    if (soundscapeHandleRef.current) {
+      soundscapeHandleRef.current.stop();
+      soundscapeHandleRef.current = null;
+    }
     soundNodesRef.current.forEach((n) => {
       try {
         if (n.stop) n.stop();
@@ -257,55 +263,9 @@ export default function SoothingDashboard({ onOpenLogModal, setActiveTab }) {
     stopAudio();
     const ctx = audioCtxRef.current;
     const master = gainNodeRef.current;
-    const bufferSize = ctx.sampleRate * 2.5;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
+    master.gain.setValueAtTime(volume / 100, ctx.currentTime);
 
-    let lastVal = 0.0;
-    for (let i = 0; i < bufferSize; i++) {
-      const white = Math.random() * 2 - 1;
-      if (type === 'brown') {
-        lastVal = (lastVal + 0.025 * white) / 1.025;
-        data[i] = lastVal * 3.5;
-      } else if (type === 'rain') {
-        lastVal = (lastVal + 0.05 * white) / 1.05;
-        data[i] = lastVal * 2.2;
-      } else {
-        lastVal = (lastVal + 0.035 * white) / 1.035;
-        data[i] = lastVal * 2.8;
-      }
-    }
-
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-    noise.loop = true;
-
-    const filter = ctx.createBiquadFilter();
-    if (type === 'brown') {
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(260, ctx.currentTime);
-    } else if (type === 'rain') {
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(750, ctx.currentTime);
-      filter.Q.setValueAtTime(0.4, ctx.currentTime);
-    } else {
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(380, ctx.currentTime);
-
-      const lfo = ctx.createOscillator();
-      lfo.frequency.setValueAtTime(0.08, ctx.currentTime);
-      const lfoGain = ctx.createGain();
-      lfoGain.gain.setValueAtTime(220, ctx.currentTime);
-      lfo.connect(lfoGain);
-      lfoGain.connect(filter.frequency);
-      lfo.start();
-      soundNodesRef.current.push(lfo);
-    }
-
-    noise.connect(filter);
-    filter.connect(master);
-    noise.start();
-    soundNodesRef.current.push(noise);
+    soundscapeHandleRef.current = createSoundscape(ctx, type, master);
   };
 
   const toggleSoundPlay = () => {
@@ -946,7 +906,7 @@ export default function SoothingDashboard({ onOpenLogModal, setActiveTab }) {
               </div>
 
               <p className="text-xs text-slate-400 mt-2">
-                Generates pink/brown noise and modulated waves to lower cortical vigilance.
+                Acoustic soundscapes & soothing harmonic tones designed to lower cortical vigilance.
               </p>
 
               {/* Sound Selector Buttons */}
