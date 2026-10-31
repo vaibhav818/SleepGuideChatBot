@@ -1,11 +1,14 @@
 # 🌙 SomnaAI — AI-Powered Sleep Guidance Platform
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel%20Production-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://sleepguidechatbot.vercel.app)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/vaibhav818/SleepGuideChatBot)
+
 [![MERN Stack](https://img.shields.io/badge/Stack-MERN%20%2B%20Gemini%20API-6366f1.svg)](#tech-stack)
 [![Node.js Version](https://img.shields.io/badge/Node.js-v20%2B-339933.svg)](https://nodejs.org)
 [![React](https://img.shields.io/badge/React-18.3-61dafb.svg)](https://react.dev)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8.svg)](https://tailwindcss.com)
-[![GitHub](https://img.shields.io/badge/GitHub-SleepGuideChatBot-181717.svg)](https://github.com/vaibhav818/SleepGuideChatBot)
 
+> 🚀 **Live Production Deployment**: [https://sleepguidechatbot.vercel.app](https://sleepguidechatbot.vercel.app)  
 > **CV Project (Sep ’25)**  
 > An evidence-based, AI-driven Sleep Guidance and Circadian Rhythm Analytics Platform built with **React.js, Node.js, Express.js, Tailwind CSS, MongoDB, and Google Gemini API**. Features dynamic context-aware sleep consultation, Pittsburgh Sleep Quality Index (PSQI) scoring, circadian 90-minute cycle calculation, and built-in acoustic soundscape synthesis.
 
